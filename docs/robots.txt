@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rizko77.github.io/ImagePDF-Converter/sitemap.xml
