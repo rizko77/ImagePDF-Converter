@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImagePDF Converter</title>
+<link rel="icon" type="image/png" href="../img/ikon.png">
+<style>
+  :root{
+    --text:#17202b;
+    --muted:rgba(23,32,43,.62);
+    --glass:rgba(255,255,255,.58);
+    --glass-strong:rgba(255,255,255,.72);
+    --stroke:rgba(255,255,255,.65);
+    --stroke-dark:rgba(23,32,43,.10);
+    --accent:#2563eb;
+    --accent-dark:#1d4ed8;
+    --ok:#15803d;
+    --err:#dc2626;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Tahoma,Arial,sans-serif;
+    color:var(--text);
+    font-size:13.5px;
+    min-height:100vh;
+    background:
+      radial-gradient(1100px 500px at 10% -10%, rgba(37,99,235,.35), transparent 60%),
+      radial-gradient(900px 480px at 95% 10%, rgba(16,185,129,.30), transparent 60%),
+      radial-gradient(800px 600px at 50% 115%, rgba(168,85,247,.28), transparent 60%),
+      linear-gradient(160deg,#dbe7fb 0%,#e9edf3 45%,#dde6f0 100%);
+    background-attachment:fixed;
+    padding:18px 16px 12px 16px;
+  }
+  .wrap{max-width:1060px;margin:0 auto;display:flex;flex-direction:column;gap:12px;min-height:calc(100vh - 30px)}
+
+  /* ── Judul melayang (bukan navbar, bukan card) ── */
+  .title-row{display:flex;align-items:center;gap:10px;padding:2px 4px;flex-wrap:wrap}
+  .title-row img{width:30px;height:30px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+  .title-row .t{line-height:1.25}
+  .title-row .t b{font-size:16px;letter-spacing:.1px;text-shadow:0 1px 0 rgba(255,255,255,.6)}
+  .title-row .t span{display:block;font-size:12px;color:var(--muted)}
+  .spacer{flex:1}
+  .gh-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:inherit;font-size:12.5px;font-weight:600;color:var(--text);
+    background:var(--glass);border:1px solid var(--stroke);border-radius:999px;
+    padding:7px 14px;cursor:pointer;text-decoration:none;
+    backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
+    box-shadow:0 4px 16px rgba(23,32,43,.12);
+  }
+  .gh-btn:hover{background:var(--glass-strong)}
+  .gh-btn svg{width:15px;height:15px}
+
+  /* ── Area kerja: langsung panel kaca, tanpa card induk ── */
+  .workspace{display:grid;grid-template-columns:1.12fr .88fr;gap:12px;align-items:start}
+  .glass{
+    background:var(--glass);
+    border:1px solid var(--stroke);
+    border-radius:var(--radius);
+    backdrop-filter:blur(20px) saturate(165%);
+    -webkit-backdrop-filter:blur(20px) saturate(165%);
+    box-shadow:0 8px 28px rgba(23,32,43,.12), inset 0 1px 0 rgba(255,255,255,.55);
+  }
+  .col{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .sec{padding:14px}
+  .sec-head{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+  .sec-head h2{font-size:13px;font-weight:700}
+  .sec-head .n{
+    font-size:10.5px;font-weight:800;color:#fff;background:rgba(23,32,43,.75);
+    width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;
+    transform:translateY(-1px);
+  }
+  .sec-head .hint{margin-left:auto;font-size:11.5px;color:var(--muted)}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    font-family:inherit;font-size:12.5px;font-weight:600;border-radius:10px;
+    padding:8px 14px;cursor:pointer;border:1px solid var(--stroke-dark);
+    background:rgba(255,255,255,.7);color:var(--text);
+  }
+  .btn:hover{background:#fff}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.35)}
+  .btn.primary:hover{background:var(--accent-dark)}
+  .btn.primary:disabled{background:#9db6e5;border-color:#9db6e5;box-shadow:none;cursor:not-allowed}
+  .btn.small{padding:6px 12px;font-size:12px;font-weight:600;border-radius:8px}
+  .btn.ghost{background:rgba(255,255,255,.45)}
+
+  .filelist{
+    border:1px solid var(--stroke-dark);border-radius:12px;
+    background:rgba(255,255,255,.45);
+    min-height:160px;max-height:240px;overflow-y:auto;margin-top:10px;
+  }
+  .filelist.empty{display:flex;align-items:center;justify-content:center}
+  .empty-note{text-align:center;color:var(--muted);padding:24px 14px;font-size:12.5px;line-height:1.6}
+  .empty-note b{color:var(--text);display:block;font-size:13px;margin-bottom:2px}
+  .frow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(23,32,43,.07);background:rgba(255,255,255,.5)}
+  .frow:last-child{border-bottom:none}
+  .frow .fic{
+    width:30px;height:36px;flex:none;border-radius:6px;
+    background:rgba(220,38,38,.10);border:1px solid rgba(220,38,38,.25);
+    display:flex;align-items:center;justify-content:center;
+    font-size:9px;font-weight:800;color:#b91c1c;
+  }
+  .frow .fmeta{min-width:0;flex:1}
+  .frow .fname{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .frow .fsub{font-size:11.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .frow .fpages{font-size:11px;font-weight:700;color:var(--text);background:rgba(255,255,255,.7);border:1px solid var(--stroke-dark);border-radius:6px;padding:2px 7px;flex:none}
+  .frow .rm{background:none;border:none;color:rgba(23,32,43,.4);font-size:16px;cursor:pointer;padding:2px 7px;border-radius:6px;flex:none;font-family:inherit}
+  .frow .rm:hover{color:var(--err);background:rgba(220,38,38,.10)}
+  .summary-line{font-size:12px;color:var(--muted);border-top:1px dashed rgba(23,32,43,.2);padding-top:8px;margin-top:10px}
+  .summary-line b{color:var(--text)}
+
+  .fmt-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:10px 0 6px 0}
+  .fmt-label:first-of-type{margin-top:0}
+  .fmt-grid{display:flex;flex-direction:column;gap:7px}
+  .fmt{
+    display:flex;gap:10px;align-items:flex-start;
+    border:1px solid var(--stroke-dark);border-radius:12px;
+    padding:8px 10px;cursor:pointer;background:rgba(255,255,255,.5);
+  }
+  .fmt:hover{background:rgba(255,255,255,.8)}
+  .fmt.sel{border-color:var(--accent);background:rgba(37,99,235,.10);box-shadow:0 0 0 1px var(--accent) inset}
+  .fmt input{margin-top:3px;accent-color:var(--accent);flex:none}
+  .fmt .ft{font-size:13px;font-weight:700}
+  .fmt .ft span{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:6px}
+  .fmt .fd{font-size:11.5px;color:var(--muted);margin-top:1px;line-height:1.45}
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .field label{display:block;font-size:12px;font-weight:600;margin-bottom:5px}
+  .seg{display:flex;border:1px solid var(--stroke-dark);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.5)}
+  .seg button{
+    flex:1;border:none;background:transparent;padding:8px 0;font-size:12.5px;font-weight:600;
+    color:var(--muted);cursor:pointer;font-family:inherit;border-right:1px solid rgba(23,32,43,.08);
+  }
+  .seg button:last-child{border-right:none}
+  .seg button.on{background:rgba(23,32,43,.85);color:#fff}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+
+  .outrow{display:flex;gap:8px;flex-wrap:wrap}
+  .outpath{
+    flex:1;min-width:140px;border:1px solid var(--stroke-dark);border-radius:10px;background:rgba(255,255,255,.45);
+    padding:8px 10px;font-size:12px;color:var(--muted);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .outpath.set{color:var(--text)}
+  .note{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .conv-summary{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.55}
+  .conv-summary b{color:var(--text)}
+  #convert-btn{width:100%;padding:11px;font-size:14px;border-radius:12px}
+  .progress-wrap{margin-top:10px;display:none}
+  .progress-wrap.show{display:block}
+  .prow{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .prow #progress-percent{font-weight:700;color:var(--accent-dark)}
+  .track{height:8px;background:rgba(23,32,43,.12);border-radius:5px;overflow:hidden}
+  #progress-bar{height:100%;width:0%;background:var(--accent);border-radius:5px;transition:width .3s}
+
+  #history-list{max-height:110px;overflow-y:auto}
+  .h-empty{font-size:12px;color:var(--muted);font-style:italic;text-align:center;padding:10px}
+  .hitem{display:flex;align-items:center;gap:8px;font-size:12px;padding:7px 0;border-bottom:1px solid rgba(23,32,43,.08)}
+  .hitem:last-child{border-bottom:none}
+  .hitem .tag{font-size:10.5px;font-weight:700;background:rgba(255,255,255,.7);border:1px solid var(--stroke-dark);border-radius:6px;padding:1px 7px;flex:none}
+  .hitem .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hitem .t{color:var(--muted);font-size:11px;flex:none}
+  .hitem .ok{color:var(--ok);font-weight:700;flex:none}
+
+  .statusbar{
+    display:flex;gap:14px;flex-wrap:wrap;
+    font-size:11.5px;color:var(--muted);padding:8px 14px;
+  }
+  .statusbar b{color:var(--text)}
+  .statusbar .right{margin-left:auto}
+
+  #toast{
+    position:fixed;right:16px;bottom:16px;z-index:50;
+    background:rgba(23,32,43,.92);color:#eef2f7;font-size:12.5px;
+    border:1px solid rgba(255,255,255,.2);border-left:4px solid var(--accent);
+    border-radius:10px;padding:10px 14px;max-width:min(360px,calc(100vw - 32px));
+    box-shadow:0 10px 28px rgba(0,0,0,.3);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    transform:translateY(16px);opacity:0;pointer-events:none;transition:all .25s;
+  }
+  #toast.show{transform:none;opacity:1}
+  #toast.err{border-left-color:var(--err)}
+  #toast.ok{border-left-color:#22c55e}
+
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(23,32,43,.25);border-radius:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* ── Responsif ── */
+  @media (max-width:900px){
+    .workspace{grid-template-columns:1fr}
+    body{padding:14px 12px 10px 12px}
+  }
+  @media (max-width:520px){
+    .row2{grid-template-columns:1fr}
+    .title-row .t span{display:none}
+    .sec{padding:12px}
+    .statusbar .right{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Baris judul melayang (bukan navbar) -->
+  <div class="title-row">
+    <img src="../img/ikon.png" alt="ikon" onerror="this.style.display='none'">
+    <div class="t"><b>ImagePDF Converter <span style="font-weight:400;color:var(--muted)">v1.1</span></b><span>Konversi PDF ke gambar &amp; format desain</span></div>
+    <span class="spacer"></span>
+    <a class="gh-btn" href="#" id="gh-btn" title="Buka GitHub rizko77">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+      rizko77
+    </a>
+  </div>
+
+  <main class="workspace">
+    <!-- Kolom kiri -->
+    <div class="col">
+      <section class="glass sec">
+        <div class="sec-head"><span class="n">1</span><h2>Berkas PDF Sumber</h2><span class="hint" id="file-count-hint">Belum ada berkas</span></div>
+        <div class="toolbar">
+          <button type="button" class="btn primary" id="add-btn">Tambah Berkas PDF</button>
+          <button type="button" class="btn ghost" id="clear-btn">Bersihkan</button>
+        </div>
+        <div id="filelist" class="filelist empty">
+          <div class="empty-note"><b>Belum ada berkas dipilih</b>Klik "Tambah Berkas PDF" untuk memilih satu atau beberapa berkas.<br>Setiap halaman menjadi satu berkas hasil.</div>
+        </div>
+        <div class="summary-line" id="file-summary">Ringkasan: <b>0 berkas</b> &middot; <b>0 halaman</b></div>
+      </section>
+
+      <section class="glass sec">
+        <div class="sec-head"><span class="n">3</span><h2>Folder Keluaran</h2></div>
+        <div class="outrow">
+          <div id="folder-text" class="outpath">Belum ada folder dipilih</div>
+          <button type="button" class="btn small" id="browse-btn">Telusuri&hellip;</button>
+          <button type="button" class="btn small ghost" id="open-folder-btn" disabled>Buka</button>
+        </div>
+        <div class="note">Lebih dari satu PDF otomatis dikemas dalam satu berkas ZIP di folder ini.</div>
+      </section>
+    </div>
+
+    <!-- Kolom kanan -->
+    <div class="col">
+      <section class="glass sec">
+        <div class="sec-head"><span class="n">2</span><h2>Format &amp; Kualitas</h2><span class="hint">Stabil</span></div>
+        <div class="fmt-label">Format umum</div>
+        <div class="fmt-grid">
+          <label class="fmt sel"><input type="radio" name="fmt" value="jpg" checked>
+            <span><span class="ft">JPG <span>.jpg &middot; ukuran kecil</span></span>
+            <div class="fd">Arsip, lampiran, cetak umum. Kualitas dapat diatur.</div></span></label>
+          <label class="fmt"><input type="radio" name="fmt" value="png">
+            <span><span class="ft">PNG <span>.png &middot; tajam</span></span>
+            <div class="fd">Cocok untuk teks dan garis. Berkas lebih besar.</div></span></label>
+          <label class="fmt"><input type="radio" name="fmt" value="tif">
+            <span><span class="ft">TIF <span>.tif &middot; percetakan</span></span>
+            <div class="fd">Kompresi LZW + info DPI. Untuk offset / digital printing.</div></span></label>
+        </div>
+        <div class="fmt-label">Aplikasi desain</div>
+        <div class="fmt-grid">
+          <label class="fmt"><input type="radio" name="fmt" value="psd">
+            <span><span class="ft">PSD <span>.psd &middot; Photoshop</span></span>
+            <div class="fd">Flatten, RGB 8-bit. Terbuka di Photoshop CS hingga CC.</div></span></label>
+          <label class="fmt"><input type="radio" name="fmt" value="cdr">
+            <span><span class="ft">CDR <span>.cdr &middot; CorelDRAW X7+</span></span>
+            <div class="fd">Gambar tersemat satu halaman penuh.</div></span></label>
+          <label class="fmt"><input type="radio" name="fmt" value="ai">
+            <span><span class="ft">AI <span>.ai &middot; Illustrator</span></span>
+            <div class="fd">Kompatibel PDF, terbuka langsung di Illustrator.</div></span></label>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Resolusi (DPI)</label>
+            <div class="seg" id="dpi-seg">
+              <button type="button" data-dpi="150">150</button>
+              <button type="button" data-dpi="200">200</button>
+              <button type="button" data-dpi="300" class="on">300</button>
+              <button type="button" data-dpi="600">600</button>
+            </div>
+          </div>
+          <div class="field" id="q-field">
+            <label>Kualitas JPG <small id="q-label">(<b>92</b>)</small></label>
+            <input type="range" id="quality" min="60" max="100" value="92">
+          </div>
+        </div>
+      </section>
+
+      <section class="glass sec">
+        <div class="conv-summary" id="conv-summary">Siap. Pilih berkas, format, lalu klik Konversi.</div>
+        <button type="button" class="btn primary" id="convert-btn">Konversi Sekarang</button>
+        <div class="progress-wrap" id="progress-section">
+          <div class="prow"><span id="status-text">Menyiapkan&hellip;</span><span id="progress-percent">0%</span></div>
+          <div class="track"><div id="progress-bar"></div></div>
+        </div>
+      </section>
+
+      <section class="glass sec">
+        <div class="sec-head"><h2>Riwayat Konversi</h2><span class="hint"><a href="#" id="clear-history" style="color:var(--muted)">Hapus</a></span></div>
+        <div id="history-list"><div class="h-empty">Belum ada aktivitas pada sesi ini.</div></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="glass statusbar">
+    <span>Status: <b id="sb-status">Siap</b></span>
+    <span id="sb-files">0 berkas</span>
+    <span id="sb-fmt">Format: JPG &middot; 300 DPI</span>
+    <span class="right">ImagePDF Converter</span>
+  </footer>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+let selectedPdfs = [];
+let pdfMeta = {};
+let selectedOutputDir = '';
+let selectedFormat = 'jpg';
+let selectedDpi = 300;
+let isConverting = false;
+
+const FMT_LABEL = {jpg:'JPG',png:'PNG',tif:'TIF',psd:'PSD',cdr:'CDR',ai:'AI'};
+const $ = id => document.getElementById(id);
+
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+function api(){ return (window.pywebview && window.pywebview.api) ? window.pywebview.api : null; }
+function setStatus(s){ $('sb-status').textContent = s; }
+
+window.addEventListener('pywebviewready', () => setStatus('Siap'));
+
+/* tombol github -> browser luar */
+$('gh-btn').addEventListener('click', e => {
+  e.preventDefault();
+  const url = 'https://github.com/rizko77';
+  const a = api();
+  if(a && a.open_url){ a.open_url(url); }
+  else { window.open(url, '_blank'); }
+});
+
+/* format */
+document.querySelectorAll('input[name="fmt"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const checked = document.querySelector('input[name="fmt"]:checked');
+    selectedFormat = checked ? checked.value : 'jpg';
+    document.querySelectorAll('.fmt').forEach(el => el.classList.remove('sel'));
+    const label = checked ? checked.closest('.fmt') : null;
+    if(label) label.classList.add('sel');
+    $('q-field').style.opacity = selectedFormat === 'jpg' ? '1' : '.4';
+    $('quality').disabled = selectedFormat !== 'jpg';
+    refreshSummary();
+  });
+});
+
+/* dpi */
+document.querySelectorAll('#dpi-seg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#dpi-seg button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    const v = parseInt(b.dataset.dpi, 10);
+    selectedDpi = Number.isFinite(v) ? v : 300;
+    refreshSummary();
+  });
+});
+
+$('quality').addEventListener('input', e => {
+  $('q-label').innerHTML = '(<b>' + esc(e.target.value) + '</b>)';
+  refreshSummary();
+});
+
+$('add-btn').addEventListener('click', selectPdf);
+$('clear-btn').addEventListener('click', () => { selectedPdfs = []; pdfMeta = {}; renderFileList(); });
+$('browse-btn').addEventListener('click', selectOutputDir);
+$('open-folder-btn').addEventListener('click', openFolder);
+$('convert-btn').addEventListener('click', startConversion);
+$('clear-history').addEventListener('click', e => {
+  e.preventDefault();
+  $('history-list').innerHTML = '<div class="h-empty">Belum ada aktivitas pada sesi ini.</div>';
+});
+
+/* hapus per-berkas via delegasi (aman untuk path dengan kutip) */
+$('filelist').addEventListener('click', e => {
+  const btn = e.target.closest('[data-rm]');
+  if(!btn) return;
+  const idx = parseInt(btn.getAttribute('data-rm'), 10);
+  if(Number.isInteger(idx) && idx >= 0 && idx < selectedPdfs.length){
+    const removed = selectedPdfs.splice(idx, 1)[0];
+    if(removed) delete pdfMeta[removed];
+    renderFileList();
+  }
+});
+
+async function selectPdf(){
+  const a = api();
+  if(!a){ showToast('Mesin aplikasi masih dimuat, coba sesaat lagi.', 'err'); return; }
+  try{
+    const paths = await a.select_pdf();
+    if(paths && paths.length){
+      let added = 0;
+      paths.forEach(p => { if(typeof p === 'string' && !selectedPdfs.includes(p)){ selectedPdfs.push(p); added++; } });
+      await refreshFileMeta();
+      renderFileList();
+      if(added) showToast(added + ' berkas ditambahkan.', 'ok');
+    }
+  }catch(err){ showToast('Gagal membuka dialog berkas: ' + err, 'err'); }
+}
+
+async function refreshFileMeta(){
+  const a = api();
+  if(!(a && a.get_pdf_info)) return;
+  try{
+    const infos = await a.get_pdf_info(selectedPdfs);
+    pdfMeta = {};
+    (infos || []).forEach(i => { if(i && i.path) pdfMeta[i.path] = i; });
+  }catch(e){ /* tampil tanpa info halaman */ }
+}
+
+function fmtSize(kb){
+  const n = Number(kb);
+  if(!Number.isFinite(n)) return '-';
+  if(n < 1024) return Math.round(n) + ' KB';
+  return (n / 1024).toFixed(1) + ' MB';
+}
+
+function renderFileList(){
+  const box = $('filelist');
+  const totalPages = selectedPdfs.reduce((acc, p) => acc + ((pdfMeta[p] && Number(pdfMeta[p].pages)) || 0), 0);
+  $('file-count-hint').textContent = selectedPdfs.length ? selectedPdfs.length + ' berkas' : 'Belum ada berkas';
+  $('file-summary').innerHTML =
+    'Ringkasan: <b>' + selectedPdfs.length + ' berkas</b> &middot; <b>' + totalPages + ' halaman</b>' +
+    (selectedPdfs.length > 1 ? ' &middot; hasil digabung ke ZIP' : '');
+  $('sb-files').textContent = selectedPdfs.length + ' berkas';
+
+  if(!selectedPdfs.length){
+    box.classList.add('empty');
+    box.innerHTML = '<div class="empty-note"><b>Belum ada berkas dipilih</b>Klik "Tambah Berkas PDF" untuk memilih satu atau beberapa berkas.<br>Setiap halaman menjadi satu berkas hasil.</div>';
+    refreshSummary();
+    return;
+  }
+  box.classList.remove('empty');
+  box.innerHTML = selectedPdfs.map((p, idx) => {
+    const m = pdfMeta[p] || {};
+    const name = esc(m.name || String(p).split(/[/\\]/).pop());
+    const pages = Number(m.pages) || 0;
+    return '<div class="frow"><div class="fic">PDF</div>' +
+      '<div class="fmeta"><div class="fname" title="' + esc(p) + '">' + name + '</div>' +
+      '<div class="fsub">' + (pages ? pages + ' hlm' : '&hellip;') + ' &middot; ' + esc(fmtSize(m.size_kb)) + ' &middot; ' + esc(p) + '</div></div>' +
+      '<span class="fpages">' + (pages || '?') + ' hlm</span>' +
+      '<button type="button" class="rm" title="Hapus berkas ini" data-rm="' + idx + '">&times;</button></div>';
+  }).join('');
+  refreshSummary();
+}
+
+async function selectOutputDir(){
+  const a = api();
+  if(!a){ showToast('Mesin aplikasi masih dimuat.', 'err'); return; }
+  try{
+    const path = await a.select_output_dir();
+    if(path){
+      selectedOutputDir = path;
+      const el = $('folder-text');
+      el.textContent = path; el.classList.add('set'); el.title = path;
+      $('open-folder-btn').disabled = false;
+      refreshSummary();
+    }
+  }catch(err){ showToast('Gagal membuka dialog folder: ' + err, 'err'); }
+}
+
+async function openFolder(){
+  if(!selectedOutputDir) return;
+  const a = api();
+  if(!(a && a.open_output_folder)) return;
+  try{ await a.open_output_folder(selectedOutputDir); }
+  catch(e){ showToast('Tidak dapat membuka folder.', 'err'); }
+}
+
+function refreshSummary(){
+  const q = $('quality').value;
+  const pages = selectedPdfs.reduce((acc, p) => acc + ((pdfMeta[p] && Number(pdfMeta[p].pages)) || 0), 0);
+  $('sb-fmt').innerHTML = 'Format: ' + esc(FMT_LABEL[selectedFormat] || selectedFormat) + ' &middot; ' + selectedDpi + ' DPI' + (selectedFormat === 'jpg' ? ' &middot; Q' + esc(q) : '');
+  let s;
+  if(selectedPdfs.length) s = '<b>' + selectedPdfs.length + ' berkas</b> (' + pages + ' hlm) &rarr; <b>' + esc(FMT_LABEL[selectedFormat] || selectedFormat) + '</b> ' + selectedDpi + ' DPI';
+  else s = 'Siap. Pilih berkas, format, lalu klik Konversi.';
+  s += selectedOutputDir ? ' &middot; folder tujuan sudah dipilih.' : ' &middot; <b>folder keluaran belum dipilih.</b>';
+  $('conv-summary').innerHTML = s;
+}
+
+function updateProgress(pct, status){
+  const n = Math.max(0, Math.min(100, Number(pct) || 0));
+  $('progress-bar').style.width = n + '%';
+  $('progress-percent').textContent = n + '%';
+  $('status-text').textContent = status == null ? '' : String(status);
+}
+
+let toastTimer = null;
+function showToast(msg, type){
+  const t = $('toast');
+  t.textContent = String(msg);
+  t.className = 'show ' + (type === 'err' ? 'err' : 'ok');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 4200);
+}
+
+function addHistory(title, format, pages){
+  const box = $('history-list');
+  const empty = box.querySelector('.h-empty');
+  if(empty) empty.remove();
+  const time = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'hitem';
+  const nm = document.createElement('span');
+  nm.className = 'nm';
+  nm.textContent = title + ' (' + pages + ' hlm)';
+  const tag = document.createElement('span');
+  tag.className = 'tag';
+  tag.textContent = format;
+  const tm = document.createElement('span');
+  tm.className = 't';
+  tm.textContent = time;
+  const ok = document.createElement('span');
+  ok.className = 'ok';
+  ok.textContent = '✓';
+  div.append(ok, nm, tag, tm);
+  box.prepend(div);
+  while(box.children.length > 30) box.lastChild.remove();
+}
+
+async function startConversion(){
+  if(!selectedPdfs.length){ showToast('Pilih minimal satu berkas PDF.', 'err'); return; }
+  if(!selectedOutputDir){ showToast('Tentukan folder keluaran terlebih dahulu.', 'err'); return; }
+  if(isConverting) return;
+  const a = api();
+  if(!a){ showToast('Mesin aplikasi masih dimuat.', 'err'); return; }
+  isConverting = true;
+  const btn = $('convert-btn');
+  btn.disabled = true; btn.textContent = 'Mengonversi…';
+  $('progress-section').classList.add('show');
+  updateProgress(0, 'Memulai…');
+  setStatus('Mengonversi…');
+  const q = parseInt($('quality').value, 10);
+  try{
+    const result = await a.convert_pdf(selectedPdfs, selectedOutputDir, selectedFormat, selectedDpi, q);
+    if(result && result.status === 'success'){
+      updateProgress(100, 'Selesai.');
+      setStatus('Selesai');
+      showToast(result.message || 'Konversi selesai.', 'ok');
+      const pages = Number(result.total_pages) || 0;
+      const title = (Number(result.files_count) > 1)
+        ? result.files_count + ' berkas PDF (ZIP)'
+        : String(selectedPdfs[0]).split(/[/\\]/).pop();
+      addHistory(title, FMT_LABEL[selectedFormat] || selectedFormat, pages);
+    } else {
+      showToast((result && result.message) || 'Konversi gagal.', 'err');
+      setStatus('Gagal');
+    }
+  }catch(err){
+    showToast('Kesalahan tak terduga: ' + err, 'err');
+    setStatus('Gagal');
+  }finally{
+    isConverting = false;
+    btn.disabled = false; btn.textContent = 'Konversi Sekarang';
+  }
+}
+
+renderFileList();
+</script>
+</body>
+</html>
