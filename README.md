@@ -1,108 +1,108 @@
-﻿# ImagePDF Converter
+# ImagePDF Converter
 
-Aplikasi desktop Windows untuk mengubah halaman PDF menjadi JPG, PNG, TIF, PSD, CDR, atau AI. Antarmuka dibuat dengan HTML dan berjalan di jendela `pywebview`.
+A Windows desktop application for converting PDF pages into JPG, PNG, TIF, PSD, CDR, or AI formats. The user interface is built using HTML and runs within a `pywebview` window.
 
-Setiap halaman PDF menghasilkan satu berkas. Jika memilih lebih dari satu PDF, seluruh hasil akan dikemas otomatis ke satu berkas ZIP di folder keluaran.
+Each PDF page results in a single file. If multiple PDF files are selected, all output files are automatically bundled into a single ZIP archive in the output folder.
 
-## Fitur
+## Features
 
-- Memilih satu atau beberapa berkas PDF sekaligus.
-- Menampilkan jumlah halaman dan ukuran setiap PDF sebelum konversi.
-- Mengatur resolusi render 150, 200, 300, atau 600 DPI.
-- Mengatur kualitas JPG dari 60 sampai 100 (nilai awal 92).
-- Memilih format JPG, PNG, TIF, PSD, CDR, atau AI.
-- Melihat kemajuan konversi dan membuka folder hasil dari aplikasi.
+- Select one or multiple PDF files at once.
+- Display the page count and file size for each PDF prior to conversion.
+- Configure render resolution: 150, 200, 300, or 600 DPI.
+- Adjust JPG quality from 60 to 100 (default is 92).
+- Choose from the following output formats: JPG, PNG, TIF, PSD, CDR, or AI.
+- Monitor conversion progress and open the output folder directly from the application.
 
-Format PSD dibuat sebagai gambar RGB 8-bit yang sudah diratakan (flatten). Format CDR berisi gambar PNG yang ditempatkan pada satu halaman. Berkas AI yang dihasilkan adalah PDF satu halaman yang dapat dibuka di Adobe Illustrator, bukan dokumen AI berisi objek vektor hasil konversi.
+PSD files are generated as flattened 8-bit RGB images. CDR files contain a PNG image placed on a single page. AI files are generated as single-page PDFs that can be opened in Adobe Illustrator; they are not native AI documents containing converted vector objects.
 
-## Struktur proyek
+## Project Structure
 
 ```text
 ImageConverter/
-├── main.py                    # Logika aplikasi dan konversi PDF
+├── main.py                    # Application logic and PDF conversion
 ├── templates/
-│   └── index.html             # Antarmuka aplikasi
+│   └── index.html             # Application user interface
 ├── img/
-│   ├── ikon.ico               # Ikon Windows
-│   ├── ikon.png               # Ikon pada antarmuka
-│   └── splash.png             # Gambar splash screen
-├── ImagePDF Converter.spec    # Konfigurasi build PyInstaller
-├── app.manifest               # Manifest aplikasi Windows
-├── version.txt                # Informasi versi berkas Windows
-├── requirements.txt           # Dependensi Python
+│   ├── ikon.ico               # Windows icon
+│   ├── ikon.png               # Icon for the user interface
+│   └── splash.png             # Splash screen image
+├── ImagePDF Converter.spec    # PyInstaller build configuration
+├── app.manifest               # Windows application manifest
+├── version.txt                # Windows file version information
+├── requirements.txt           # Python dependencies
 └── README.md
 ```
 
-Folder `build/` dan `dist/` dibuat oleh PyInstaller. Keduanya bukan sumber aplikasi dan dapat dibuat ulang saat proses build.
+The `build/` and `dist/` folders are created by PyInstaller. They are not part of the application source code and can be regenerated during the build process.
 
-## Persyaratan
+## Requirements
 
-- Windows 10 atau Windows 11.
-- Python 3.10 atau lebih baru. Build yang ada di proyek dibuat dengan Python 3.12; gunakan Python 3.12 untuk hasil build yang paling mendekati.
-- Microsoft Edge WebView2 Runtime agar jendela `pywebview` dapat ditampilkan. Runtime ini biasanya sudah tersedia di Windows 10/11. Jika jendela aplikasi tidak terbuka, pasang WebView2 Runtime dari situs resmi Microsoft.
+- Windows 10 or Windows 11.
+- Python 3.10 or later. The build included in this project was created using Python 3.12; please use Python 3.12 to ensure the most consistent build results.
+- Microsoft Edge WebView2 Runtime is required to display the `pywebview` window. This runtime is typically pre-installed on Windows 10/11. If the application window fails to open, please install the WebView2 Runtime from the official Microsoft website.
 
-## Instalasi dan menjalankan dari kode sumber
+## Installation and running from source code
 
-Buka PowerShell pada folder proyek, lalu buat dan aktifkan virtual environment:
+Open PowerShell in the project folder, then create and activate a virtual environment:
 
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Jika PowerShell menolak aktivasi skrip, jalankan perintah berikut pada sesi tersebut, lalu aktifkan kembali virtual environment:
+If PowerShell prevents the script from running, execute the following command in the current session, then attempt to activate the virtual environment again:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
 ```
 
-Pasang paket yang dibutuhkan:
+Install the required packages:
 
 ```powershell
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Jalankan aplikasi:
+Run the application:
 
 ```powershell
 python main.py
 ```
 
-## Cara menggunakan
+## How to use
 
-1. Klik **Tambah Berkas PDF** dan pilih satu atau beberapa PDF.
-2. Pilih format keluaran. Untuk JPG, atur kualitas sesuai kebutuhan.
-3. Pilih resolusi DPI. DPI lebih tinggi menghasilkan gambar lebih besar dan proses lebih lama.
-4. Klik **Telusuri** untuk memilih folder keluaran.
-5. Klik **Konversi Sekarang**.
-6. Setelah konversi selesai, gunakan tombol **Buka** untuk melihat folder hasil.
+1. Click **Add PDF File(s)** and select one or more PDF files.
+2. Choose an output format. For JPG, adjust the quality settings as needed.
+3. Select the DPI resolution. A higher DPI results in larger image files and a longer processing time.
+4. Click **Browse** to select an output folder.
+5. Click **Convert Now**.
+6. Once the conversion is complete, use the **Open** button to view the output folder.
 
-Nama hasil mengikuti pola `nama_pdf_page_nomor.ext`, misalnya `dokumen_page_1.jpg`. Jika beberapa PDF dipilih, ZIP diberi nama `Hasil_Konversi_YYYYMMDD_HHMMSS.zip`.
+Output files follow the naming pattern `pdf_name_page_number.ext` (e.g., `document_page_1.jpg`). If multiple PDF files are selected, the resulting ZIP file will be named `Hasil_Konversi_YYYYMMDD_HHMMSS.zip`.
 
-## Build menjadi EXE
+## Building an EXE
 
-Build menggunakan PyInstaller dan berkas `ImagePDF Converter.spec`. Konfigurasi tersebut mengumpulkan folder `templates` dan `img`, memakai ikon `img/ikon.ico`, splash screen `img/splash.png`, `app.manifest`, serta `version.txt`.
+Build the application using PyInstaller and the `ImagePDF Converter.spec` file. This configuration includes the `templates` and `img` folders, the icon file `img/ikon.ico`, the splash screen `img/splash.png`, `app.manifest`, and `version.txt`.
 
-Pastikan virtual environment aktif dan paket pada `requirements.txt` sudah terpasang. Jalankan:
+Ensure your virtual environment is active and that the packages listed in `requirements.txt` are installed. Then, run:
 
 ```powershell
 pyinstaller --clean --noconfirm "ImagePDF Converter.spec"
 ```
 
-Hasilnya adalah aplikasi mode **one-folder** (EXE beserta berkas pendukung), bukan satu EXE mandiri. Jalankan:
+The result is a **one-folder** application (an executable accompanied by its supporting files), rather than a single standalone executable. Run it via:
 
 ```text
 dist\ImagePDF Converter\ImagePDF Converter.exe
 ```
 
-Untuk membagikan aplikasi, salin seluruh folder `dist\ImagePDF Converter`, bukan hanya EXE-nya. Build perlu dilakukan di Windows. Paket hasil build menyertakan runtime Python dan dependensi sehingga komputer tujuan tidak perlu memasang Python. WebView2 Runtime tetap perlu tersedia di Windows.
+To distribute the application, copy the entire `dist\ImagePDF Converter` folder—do not copy just the executable file. The build process must be performed on Windows. The resulting build package includes the Python runtime and all dependencies, so the target computer does not need to have Python installed. However, the WebView2 Runtime must be present on the Windows system.
 
-Jika ingin membangun ulang dari kondisi bersih, hapus folder `build` dan `dist` secara manual sebelum menjalankan perintah build. Jangan hapus `img` atau `templates`; keduanya diperlukan saat packaging.
+If you wish to perform a clean rebuild, manually delete the `build` and `dist` folders before running the build command. Do not delete the `img` or `templates` folders, as they are required for the packaging process.
 
-## Catatan
+## Notes
 
-- Kode konversi menerima DPI 72 sampai 600. Antarmuka menyediakan pilihan 150, 200, 300, dan 600.
-- DPI tinggi, PDF dengan banyak halaman, dan berkas besar membutuhkan lebih banyak waktu serta memori.
-- Pemrosesan PDF dilakukan secara lokal oleh aplikasi.
+- The conversion code supports a DPI range of 72 to 600. The interface offers options for 150, 200, 300, and 600 DPI.
+- Higher DPI settings, multi-page PDFs, and large files require more processing time and memory.
+- PDF processing is performed locally by the application.
